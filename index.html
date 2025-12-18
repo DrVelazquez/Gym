@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UltraFit - Mi Rutina Personal</title>
+    <title>UltraFit - Sincronización Total</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -11,8 +11,17 @@
         .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .scroll-hide::-webkit-scrollbar { display: none; }
+        .custom-shadow { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); }
     </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
@@ -24,41 +33,61 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- DATOS PROPORCIONADOS POR EL USUARIO ---
-        const USER_MASTER_EXERCISES = {
-            "Press banca": { weight: 60, sets: 3, reps: 8 },
-            "Press militar mancuernas": { weight: 20, sets: 3, reps: 10 },
-            "Aperturas en banco inclinado": { weight: 12.5, sets: 3, reps: 10 },
-            "Tríceps con polea": { weight: 45, sets: 3, reps: 12 },
-            "Tríceps con soga": { weight: 45, sets: 3, reps: 12 },
-            "Curl Biceps de pie con mancuernas": { weight: 15, sets: 3, reps: 8 },
-            "Curl Biceps en banco": { weight: 30, sets: 3, reps: 12 },
-            "Abdominales en maquina": { weight: 50, sets: 4, reps: 15 },
-            "Sentadilla barra": { weight: 55, sets: 3, reps: 8 },
-            "Prensa 45": { weight: 60, sets: 4, reps: 10 },
-            "Remo en polea baja": { weight: 60, sets: 4, reps: 10 },
-            "Dominadas": { weight: 0, sets: 3, reps: 10 }
-        };
-
-        const USER_ROUTINES = {
-            "EMPUJE": {
-                "Día 1": ["Press banca", "Press militar mancuernas", "Aperturas en banco inclinado", "Tríceps con polea", "Tríceps con soga", "Curl Biceps de pie con mancuernas", "Curl Biceps en banco", "Abdominales en maquina"],
-                "Día 2": ["Press banca", "Aperturas en banco inclinado"]
+        // --- CARGA INICIAL DE DATOS BASADA EN EL CSV Y RESPALDO ---
+        const INITIAL_STATE = {
+            masterExercises: {
+                "Press banca": { weight: 60, sets: 3, reps: 8 },
+                "Press militar mancuernas": { weight: 20, sets: 3, reps: 10 },
+                "Aperturas en banco inclinado": { weight: 15, sets: 3, reps: 10 },
+                "Tríceps con polea": { weight: 45, sets: 3, reps: 12 },
+                "Sentadilla barra": { weight: 55, sets: 3, reps: 8 },
+                "Prensa 45": { weight: 65, sets: 4, reps: 10 },
+                "Remo en polea baja": { weight: 60, sets: 4, reps: 10 },
+                "Dominadas": { weight: 0, sets: 4, reps: 10 },
+                "Tríceps con soga": { weight: 45, sets: 3, reps: 12 },
+                "Curl Biceps de pie con mancuernas": { weight: 15, sets: 3, reps: 8 },
+                "Curl Biceps en banco": { weight: 30, sets: 3, reps: 12 },
+                "Abdominales en maquina": { weight: 50, sets: 4, reps: 15 },
+                "Press pectoral en máquina": { weight: 56, sets: 3, reps: 8 },
+                "Press mi": { weight: 0, sets: 3, reps: 10 },
+                "Press francés a una mano (triceps)": { weight: 12, sets: 3, reps: 15 },
+                "Abdominales": { weight: 10, sets: 4, reps: 20 },
+                "Sentadilla bulgara": { weight: 12.5, sets: 3, reps: 8 },
+                "Isquiotibiales en maquina": { weight: 42, sets: 4, reps: 12 },
+                "Abductor Ext en maquina": { weight: 42, sets: 2, reps: 12 },
+                "Abductor Int en maquina": { weight: 35, sets: 2, reps: 12 },
+                "Gemelo en prensa": { weight: 72, sets: 4, reps: 12 },
+                "Gemelo con mancuernas": { weight: 40, sets: 2, reps: 15 },
+                "Extensiones cuadriceps": { weight: 56, sets: 4, reps: 15 },
+                "Remo con barra de pie polea": { weight: 84, sets: 3, reps: 8 },
+                "Press de hombros con mancuernas": { weight: 18, sets: 3, reps: 8 },
+                "Press hombros maquina": { weight: 42, sets: 3, reps: 8 },
+                "Elevaciones laterales mancuernas": { weight: 12, sets: 3, reps: 8 },
+                "Encogimiento trapecio": { weight: 26, sets: 3, reps: 12 },
+                "Remo al menton barra": { weight: 10, sets: 3, reps: 8 },
+                "Remo en maquin": { weight: 0, sets: 3, reps: 10 },
+                "Remo en máquina": { weight: 84, sets: 3, reps: 8 }
             },
-            "PIERNAS": {
-                "Día 1": ["Sentadilla barra", "Prensa 45"],
-                "Día 2": ["Prensa 45"]
-            },
-            "TIRÓN": {
-                "Día 1": ["Remo en polea baja", "Dominadas"],
-                "Día 2": ["Dominadas"]
+            routines: {
+                "EMPUJE": {
+                    "Día 1": ["Press banca", "Press militar mancuernas", "Aperturas en banco inclinado", "Tríceps con polea", "Tríceps con soga", "Curl Biceps de pie con mancuernas", "Curl Biceps en banco", "Abdominales en maquina"],
+                    "Día 2": ["Press banca", "Aperturas en banco inclinado", "Press pectoral en máquina", "Abdominales"]
+                },
+                "PIERNAS": {
+                    "Día 1": ["Sentadilla barra", "Prensa 45", "Sentadilla bulgara", "Isquiotibiales en maquina", "Gemelo en prensa"],
+                    "Día 2": ["Prensa 45", "Extensiones cuadriceps", "Abductor Ext en maquina", "Abductor Int en maquina"]
+                },
+                "TIRÓN": {
+                    "Día 1": ["Remo en polea baja", "Dominadas", "Remo con barra de pie polea", "Press de hombros con mancuernas", "Elevaciones laterales mancuernas"],
+                    "Día 2": ["Remo en máquina", "Dominadas", "Encogimiento trapecio", "Remo al menton barra"]
+                }
             }
         };
 
         const STORAGE_KEYS = {
-            EXERCISES: 'ultrafit_master_v5',
-            ROUTINES: 'ultrafit_routines_v5',
-            LAST: 'ultrafit_last_v5'
+            MASTER: 'ultrafit_master_v6',
+            ROUTINES: 'ultrafit_routines_v6',
+            LAST: 'ultrafit_last_v6'
         };
 
         const MUSCLE_GROUPS = ["EMPUJE", "PIERNAS", "TIRÓN"];
@@ -67,33 +96,33 @@
         // --- COMPONENTES ---
 
         const ExerciseCard = ({ name, data, onUpdate, onRemove, onMoveUp, onMoveDown, isFirst, isLast }) => (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 group hover:border-indigo-200 transition-all animate-fade-in relative overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 group hover:border-indigo-300 transition-all animate-fade-in custom-shadow relative">
                 <div className="flex justify-between items-start mb-4">
                     <div className="flex-1">
-                        <h3 className="font-extrabold text-slate-800 text-lg leading-tight">{name}</h3>
+                        <h3 className="font-extrabold text-slate-800 text-lg leading-tight group-hover:text-indigo-600 transition-colors">{name}</h3>
                         <div className="flex items-center gap-1.5 mt-1">
-                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Sincronizado</span>
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sincronizado</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
-                        <div className="flex bg-slate-50 rounded-lg p-0.5 border border-slate-100">
-                            <button onClick={onMoveUp} disabled={isFirst} className={`p-1 rounded transition-colors ${isFirst ? 'text-slate-200' : 'text-slate-400 hover:bg-white hover:text-indigo-600'}`}>
+                        <div className="flex bg-slate-50 rounded-xl p-0.5 border border-slate-100">
+                            <button onClick={onMoveUp} disabled={isFirst} className={`p-1.5 rounded-lg transition-colors ${isFirst ? 'text-slate-200' : 'text-slate-400 hover:bg-white hover:text-indigo-600'}`}>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 15l7-7 7 7" /></svg>
                             </button>
-                            <button onClick={onMoveDown} disabled={isLast} className={`p-1 rounded transition-colors ${isLast ? 'text-slate-200' : 'text-slate-400 hover:bg-white hover:text-indigo-600'}`}>
+                            <button onClick={onMoveDown} disabled={isLast} className={`p-1.5 rounded-lg transition-colors ${isLast ? 'text-slate-200' : 'text-slate-400 hover:bg-white hover:text-indigo-600'}`}>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M19 9l-7 7-7-7" /></svg>
                             </button>
                         </div>
-                        <button onClick={onRemove} className="p-1.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-lg ml-1 transition-all">
+                        <button onClick={onRemove} className="p-2 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl ml-1 transition-all">
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                     </div>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                     {[{ label: 'KG', key: 'weight', step: 0.5 }, { label: 'Sets', key: 'sets', step: 1 }, { label: 'Reps', key: 'reps', step: 1 }].map(field => (
-                        <div key={field.key} className="bg-slate-50 rounded-xl p-3 flex flex-col items-center border border-slate-100 focus-within:border-indigo-200 focus-within:bg-white transition-all shadow-inner">
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">{field.label}</span>
+                        <div key={field.key} className="bg-slate-50 rounded-2xl p-3 flex flex-col items-center border border-transparent focus-within:border-indigo-100 focus-within:bg-white focus-within:shadow-md transition-all">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">{field.label}</span>
                             <input 
                                 type="number" step={field.step} value={data[field.key] ?? 0}
                                 onChange={(e) => onUpdate({ [field.key]: parseFloat(e.target.value) || 0 })}
@@ -114,34 +143,34 @@
             }, [query, existingExercises]);
 
             return (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-fade-in">
-                        <div className="px-6 pt-6 pb-2 flex justify-between items-center">
-                            <h3 className="text-xl font-black text-slate-900 uppercase italic">Añadir Ejercicio</h3>
-                            <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-600 transition-colors">
-                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+                    <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-fade-in border border-white/20">
+                        <div className="px-8 pt-8 pb-4 flex justify-between items-center">
+                            <h3 className="text-2xl font-black text-slate-900 italic uppercase">Añadir</h3>
+                            <button onClick={onClose} className="p-2 text-slate-300 hover:text-slate-900 transition-colors">
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <form className="p-6 pt-2" onSubmit={(e) => { e.preventDefault(); if(query.trim()) onAdd(query.trim()); }}>
+                        <form className="p-8 pt-2" onSubmit={(e) => { e.preventDefault(); if(query.trim()) onAdd(query.trim()); }}>
                             <div className="relative">
                                 <input 
-                                    autoFocus type="text" placeholder="Ej: Press Banca..." value={query}
+                                    autoFocus type="text" placeholder="Busca o escribe ejercicio..." value={query}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white transition-all"
+                                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-3xl px-6 py-5 font-bold outline-none focus:border-indigo-500 focus:bg-white transition-all text-lg"
                                 />
                                 {suggestions.length > 0 && (
-                                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-2xl shadow-2xl z-10 overflow-hidden">
-                                        <div className="px-4 py-2 bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 italic">¿Es este?</div>
+                                    <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-slate-200 rounded-[2rem] shadow-2xl z-10 overflow-hidden border-indigo-100 animate-fade-in">
+                                        <div className="px-5 py-3 bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 italic">Existentes</div>
                                         {suggestions.map((name, i) => (
-                                            <button key={i} type="button" onClick={() => onAdd(name)} className="w-full text-left px-5 py-3.5 hover:bg-indigo-50 text-slate-700 font-bold border-b border-slate-100 last:border-none transition-colors">
+                                            <button key={i} type="button" onClick={() => onAdd(name)} className="w-full text-left px-6 py-4 hover:bg-indigo-50 text-slate-800 font-bold border-b border-slate-50 last:border-none transition-colors">
                                                 {name}
                                             </button>
                                         ))}
                                     </div>
                                 )}
                             </div>
-                            <button type="submit" disabled={!query.trim()} className="w-full mt-8 bg-indigo-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest">
-                                Confirmar
+                            <button type="submit" disabled={!query.trim()} className="w-full mt-8 bg-indigo-600 text-white py-5 rounded-3xl font-black text-xl shadow-xl hover:bg-indigo-700 disabled:opacity-50 transition-all active:scale-95 uppercase tracking-widest italic">
+                                Vincular Ejercicio
                             </button>
                         </form>
                     </div>
@@ -153,12 +182,12 @@
 
         const App = () => {
             const [masterExercises, setMasterExercises] = useState(() => {
-                const saved = localStorage.getItem(STORAGE_KEYS.EXERCISES);
-                return saved ? JSON.parse(saved) : USER_MASTER_EXERCISES;
+                const saved = localStorage.getItem(STORAGE_KEYS.MASTER);
+                return saved ? JSON.parse(saved) : INITIAL_STATE.masterExercises;
             });
             const [routines, setRoutines] = useState(() => {
                 const saved = localStorage.getItem(STORAGE_KEYS.ROUTINES);
-                return saved ? JSON.parse(saved) : USER_ROUTINES;
+                return saved ? JSON.parse(saved) : INITIAL_STATE.routines;
             });
             const [lastSession, setLastSession] = useState(() => {
                 const saved = localStorage.getItem(STORAGE_KEYS.LAST);
@@ -172,18 +201,19 @@
             const [isFinishedFlash, setIsFinishedFlash] = useState(false);
             const fileInputRef = useRef(null);
 
-            useEffect(() => { localStorage.setItem(STORAGE_KEYS.EXERCISES, JSON.stringify(masterExercises)); }, [masterExercises]);
+            // Persistencia
+            useEffect(() => { localStorage.setItem(STORAGE_KEYS.MASTER, JSON.stringify(masterExercises)); }, [masterExercises]);
             useEffect(() => { localStorage.setItem(STORAGE_KEYS.ROUTINES, JSON.stringify(routines)); }, [routines]);
             useEffect(() => { localStorage.setItem(STORAGE_KEYS.LAST, JSON.stringify(lastSession)); }, [lastSession]);
 
             const showFeedback = (msg) => {
                 setFeedback(msg);
-                setTimeout(() => setFeedback(null), 2000);
+                setTimeout(() => setFeedback(null), 2500);
             };
 
             const updateExercise = (name, newData) => {
                 setMasterExercises(prev => ({ ...prev, [name]: { ...prev[name], ...newData } }));
-                showFeedback('Guardado');
+                showFeedback('Datos Sincronizados');
             };
 
             const addExercise = (name) => {
@@ -192,14 +222,16 @@
                 }
                 setRoutines(prev => {
                     const current = prev[selectedMuscle]?.[selectedDay] || [];
-                    if (current.includes(name)) { showFeedback('Ya está en lista'); return prev; }
+                    if (current.includes(name)) { showFeedback('Ya en rutina'); return prev; }
                     return { ...prev, [selectedMuscle]: { ...prev[selectedMuscle], [selectedDay]: [...current, name] } };
                 });
                 setIsModalOpen(false);
+                showFeedback('Ejercicio Añadido');
             };
 
             const removeExercise = (name) => {
                 setRoutines(prev => ({ ...prev, [selectedMuscle]: { ...prev[selectedMuscle], [selectedDay]: prev[selectedMuscle][selectedDay].filter(n => n !== name) } }));
+                showFeedback('Removido de hoy');
             };
 
             const moveExercise = (index, dir) => {
@@ -217,11 +249,10 @@
             const handleFinish = () => {
                 const now = new Date();
                 const dateStr = now.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                const session = { muscle: selectedMuscle, day: selectedDay, date: dateStr };
-                setLastSession(session);
+                setLastSession({ muscle: selectedMuscle, day: selectedDay, date: dateStr });
                 setIsFinishedFlash(true);
                 showFeedback('¡Sesión Registrada!');
-                setTimeout(() => setIsFinishedFlash(false), 1500);
+                setTimeout(() => setIsFinishedFlash(false), 2000);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
@@ -232,7 +263,7 @@
                 link.href = URL.createObjectURL(blob);
                 link.download = `UltraFit_Backup_${new Date().toISOString().split('T')[0]}.json`;
                 link.click();
-                showFeedback('Respaldo Descargado');
+                showFeedback('Respaldo Generado');
             };
 
             const importBackup = (e) => {
@@ -242,12 +273,13 @@
                 reader.onload = (ev) => {
                     try {
                         const data = JSON.parse(ev.target.result);
+                        // Validación y reemplazo TOTAL para sincronización entre dispositivos
                         if (data.masterExercises && data.routines) {
                             setMasterExercises(data.masterExercises);
                             setRoutines(data.routines);
                             if (data.lastSession) setLastSession(data.lastSession);
-                            showFeedback('¡Importación Exitosa!');
-                        } else { alert('Archivo incompatible'); }
+                            showFeedback('¡Sincronización Completa!');
+                        } else { alert('Archivo no válido'); }
                     } catch (err) { alert('Error leyendo el archivo'); }
                 };
                 reader.readAsText(file);
@@ -257,53 +289,53 @@
             const currentList = routines[selectedMuscle]?.[selectedDay] || [];
 
             return (
-                <div className={`min-h-screen transition-all duration-700 ${isFinishedFlash ? 'bg-emerald-100' : 'bg-slate-50'} pb-40`}>
+                <div className={`min-h-screen transition-all duration-1000 ${isFinishedFlash ? 'bg-emerald-100' : 'bg-slate-50'} pb-48`}>
                     
-                    {/* BANNER ÚLTIMA SESIÓN */}
+                    {/* INDICADOR ÚLTIMA SESIÓN */}
                     {lastSession && (
-                        <div className="bg-indigo-600 text-white px-4 py-2 text-center shadow-lg animate-fade-in sticky top-0 z-30 flex items-center justify-center gap-2">
-                            <span className="p-1 bg-white/20 rounded">
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div className="bg-slate-900 text-white px-4 py-2.5 text-center shadow-xl animate-fade-in sticky top-0 z-30 flex items-center justify-center gap-2 border-b border-white/10">
+                            <span className="p-1.5 bg-indigo-500 rounded-lg shadow-lg shadow-indigo-500/50">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             </span>
-                            <p className="text-[10px] sm:text-xs font-black tracking-widest uppercase">
-                                Última: <span className="font-extrabold">{lastSession.muscle} {lastSession.day}</span> | {lastSession.date}
+                            <p className="text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase italic">
+                                Último Entrenamiento: <span className="text-indigo-400 font-black">{lastSession.muscle} {lastSession.day}</span> — {lastSession.date}
                             </p>
                         </div>
                     )}
 
-                    <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-4 py-6 shadow-sm sticky z-20" style={{ top: lastSession ? '32px' : '0' }}>
-                        <div className="max-w-2xl mx-auto space-y-5">
+                    <header className="bg-white/90 backdrop-blur-xl border-b border-slate-200 px-4 py-8 shadow-sm sticky z-20" style={{ top: lastSession ? '44px' : '0' }}>
+                        <div className="max-w-2xl mx-auto space-y-6">
                             <div className="flex justify-between items-center">
-                                <h1 className="text-2xl font-black text-indigo-600 italic tracking-tighter flex items-center gap-2">
-                                    <span className="p-1.5 bg-indigo-600 text-white rounded-xl shadow-indigo-100 shadow-xl not-italic">
-                                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                <h1 className="text-3xl font-black text-indigo-600 italic tracking-tighter flex items-center gap-3">
+                                    <span className="p-2 bg-indigo-600 text-white rounded-[1.25rem] shadow-2xl shadow-indigo-600/30 not-italic transform -rotate-6">
+                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                                     </span>
                                     ULTRAFIT
                                 </h1>
-                                <div className="flex items-center gap-2">
-                                    {feedback && <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded-lg uppercase animate-bounce">{feedback}</span>}
-                                    <div className="flex bg-slate-100 p-1 rounded-xl gap-0.5 border border-slate-200">
-                                        <button onClick={exportBackup} title="Exportar" className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-indigo-600 transition-all">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                                <div className="flex items-center gap-3">
+                                    {feedback && <span className="text-[10px] font-black text-white bg-indigo-600 px-3 py-1.5 rounded-full uppercase tracking-widest animate-pulse shadow-lg shadow-indigo-600/20">{feedback}</span>}
+                                    <div className="flex bg-slate-100 p-1.5 rounded-[1.25rem] gap-1 border border-slate-200">
+                                        <button onClick={exportBackup} title="Exportar Respaldo" className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-indigo-600 transition-all shadow-sm">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                                         </button>
-                                        <button onClick={() => fileInputRef.current.click()} title="Importar" className="p-1.5 hover:bg-white rounded-lg text-slate-400 hover:text-indigo-600 transition-all">
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                        <button onClick={() => fileInputRef.current.click()} title="Importar Respaldo" className="p-2 hover:bg-white rounded-xl text-slate-500 hover:text-indigo-600 transition-all shadow-sm">
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex gap-2">
-                                <select value={selectedMuscle} onChange={e => setSelectedMuscle(e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-black shadow-sm outline-none focus:ring-4 focus:ring-indigo-500/10 uppercase tracking-widest text-center appearance-none cursor-pointer">
+                            <div className="flex gap-3">
+                                <select value={selectedMuscle} onChange={e => setSelectedMuscle(e.target.value)} className="flex-1 bg-white border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-black shadow-sm outline-none focus:border-indigo-500 uppercase tracking-widest text-center appearance-none cursor-pointer hover:bg-slate-50 transition-colors">
                                     {MUSCLE_GROUPS.map(m => <option key={m} value={m}>{m}</option>)}
                                 </select>
-                                <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)} className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3.5 text-sm font-black shadow-sm outline-none focus:ring-4 focus:ring-indigo-500/10 uppercase tracking-widest text-center appearance-none cursor-pointer">
+                                <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)} className="flex-1 bg-white border-2 border-slate-100 rounded-2xl px-5 py-4 text-sm font-black shadow-sm outline-none focus:border-indigo-500 uppercase tracking-widest text-center appearance-none cursor-pointer hover:bg-slate-50 transition-colors">
                                     {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
                                 </select>
                             </div>
                         </div>
                     </header>
 
-                    <main className="max-w-2xl mx-auto px-4 mt-8 space-y-4">
+                    <main className="max-w-2xl mx-auto px-4 mt-10 space-y-6">
                         {currentList.length > 0 ? (
                             <>
                                 {currentList.map((name, i) => (
@@ -320,22 +352,22 @@
                                     />
                                 ))}
 
-                                <div className="pt-8 pb-12">
+                                <div className="pt-10 pb-16">
                                     <button 
                                         onClick={handleFinish}
-                                        className="w-full bg-gradient-to-r from-indigo-600 to-indigo-800 text-white py-5 rounded-3xl font-black text-xl shadow-xl shadow-indigo-100 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 border-b-4 border-indigo-900 uppercase tracking-widest"
+                                        className="w-full bg-slate-900 text-white py-6 rounded-[2.5rem] font-black text-2xl shadow-2xl hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.2em] italic"
                                     >
-                                        <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                                        RUTINA FINALIZADA
+                                        <svg className="w-8 h-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M5 13l4 4L19 7" /></svg>
+                                        Entrenamiento Finalizado
                                     </button>
                                 </div>
                             </>
                         ) : (
-                            <div className="text-center py-20 bg-white border-2 border-dashed border-slate-200 rounded-3xl text-slate-300 font-bold px-10">
-                                <svg className="w-12 h-12 mx-auto mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
-                                <p className="mb-4">No hay ejercicios para hoy.</p>
-                                <button onClick={() => setIsModalOpen(true)} className="bg-indigo-50 text-indigo-600 px-6 py-2 rounded-xl font-bold hover:bg-indigo-100 transition-all uppercase text-xs tracking-widest">
-                                    + Empezar Lista
+                            <div className="text-center py-24 bg-white border-4 border-dashed border-slate-200 rounded-[3rem] text-slate-300 font-black px-12 animate-fade-in">
+                                <svg className="w-20 h-20 mx-auto mb-6 opacity-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                <p className="mb-6 text-xl italic uppercase tracking-widest">Día de Descanso o Rutina Vacía</p>
+                                <button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 text-white px-10 py-4 rounded-3xl font-black hover:bg-indigo-700 transition-all uppercase text-sm tracking-widest shadow-xl shadow-indigo-600/20">
+                                    + Crear Plan
                                 </button>
                             </div>
                         )}
@@ -343,10 +375,11 @@
 
                     <input type="file" ref={fileInputRef} onChange={importBackup} className="hidden" accept=".json" />
 
-                    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-xs px-4">
-                        <button onClick={() => setIsModalOpen(true)} className="w-full bg-slate-900 text-white py-4.5 rounded-2xl font-black shadow-2xl hover:bg-indigo-900 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-widest border-b-4 border-slate-950">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4" /></svg>
-                            Añadir Ejercicio
+                    {/* BOTÓN FLOTANTE PRINCIPAL */}
+                    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-xs px-6">
+                        <button onClick={() => setIsModalOpen(true)} className="w-full bg-white text-slate-900 py-5 rounded-3xl font-black shadow-2xl hover:bg-indigo-50 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest border-2 border-slate-200">
+                            <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" d="M12 4v16m8-8H4" /></svg>
+                            Agregar Ejercicio
                         </button>
                     </div>
 

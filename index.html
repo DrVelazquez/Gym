@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Rutina de Entrenamiento</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 { text-align: center; color: #1e293b; }
+        .menu-section { display: flex; gap: 10px; margin-bottom: 20px; }
+        select { flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 16px; }
+        .card { background: var(--card); padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .exercise-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .exercise-name { font-weight: bold; color: #334155; }
+        .weight-input { width: 80px; padding: 8px; border: 2px solid var(--primary); border-radius: 6px; text-align: center; font-size: 18px; font-weight: bold; }
+        .info { font-size: 0.9em; color: #64748b; }
+        .save-msg { text-align: center; color: #059669; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>KG Press Banca App</h1>
+    
+    <div class="menu-section">
+        <select id="selectMusculo" onchange="renderizar()">
+            <option value="PECHO">Pecho / Empuje</option>
+            <option value="PIERNAS">Piernas</option>
+            <option value="ESPALDA">Espalda / Tirón</option>
+        </select>
+        <select id="selectDia" onchange="renderizar()">
+            <option value="DIA 1">Día 1</option>
+            <option value="DIA 2">Día 2</option>
+        </select>
+    </div>
+
+    <div id="listaEjercicios"></div>
+    <p id="saveMsg" class="save-msg">¡Peso actualizado en toda la rutina!</p>
+</div>
+
+<script>
+// 1. BASE DE DATOS DE PESOS (Se guarda en el navegador)
+let pesosGlobales = JSON.parse(localStorage.getItem('pesosEntrenamiento')) || {
+    "Press banca": 60,
+    "Press militar mancuernas": 20,
+    "Aperturas en banco inclinado": 12.5,
+    "triceps con polea": 45,
+    "Tríceps con soga": 45,
+    "Curl bíceps de pie con mancuernas": 15,
+    "Curl bíceps en banco": 30,
+    "Abdominales en maquina": 50,
+    "Press pectoral en maquina": 56,
+    "Press francés una mano (triceps)": 12,
+    "Sentadilla barra asistida": 55,
+    "Prensa 45": 60,
+    "sentadillas bulgaras": 12.5,
+    "Isquiotibiales en maquina": 42,
+    "Abductor ext en maquina": 42,
+    "Abductor int en maquina": 35,
+    "Gemelo en prensa": 72,
+    "Gemelo con mancuernas": 40,
+    "Extensiones cuádriceps": 56,
+    "Remo con barra de pie polea": 84,
+    "Dominadas": 0,
+    "Remo en polea baja": 60,
+    "Press de hombro mancuernas": 18,
+    "Pres hombros en maquina": 42,
+    "Elevaciones laterales mancuernas": 12,
+    "Encogimientos trapecio": 26,
+    "Remo al mentón barra": 10,
+    "Remo en maquina": 84
+};
+
+// 2. ESTRUCTURA DE LA RUTINA (Relaciona días con ejercicios)
+const rutinas = {
+    "PECHO": {
+        "DIA 1": [
+            { nombre: "Press banca", series: "3x8" },
+            { nombre: "Press militar mancuernas", series: "3x10" },
+            { nombre: "Aperturas en banco inclinado", series: "3x10" },
+            { nombre: "triceps con polea", series: "3x12" },
+            { nombre: "Tríceps con soga", series: "3x12" },
+            { nombre: "Curl bíceps de pie con mancuernas", series: "3x8" },
+            { nombre: "Curl bíceps en banco", series: "3x12" },
+            { nombre: "Abdominales en maquina", series: "4x15" }
+        ],
+        "DIA 2": [
+            { nombre: "Press banca", series: "3x8" },
+            { nombre: "Press pectoral en maquina", series: "3x8" },
+            { nombre: "Press militar mancuernas", series: "2x12" },
+            { nombre: "Aperturas en banco inclinado", series: "2x15" },
+            { nombre: "triceps con polea", series: "3x8" },
+            { nombre: "Press francés una mano (triceps)", series: "3x15" },
+            { nombre: "Curl bíceps de pie con mancuernas", series: "3x10" },
+            { nombre: "Curl bíceps en banco", series: "3x12" }
+        ]
+    },
+    "PIERNAS": {
+        "DIA 1": [
+            { nombre: "Sentadilla barra asistida", series: "3x8" },
+            { nombre: "Prensa 45", series: "4x10" },
+            { nombre: "sentadillas bulgaras", series: "3x8" },
+            { nombre: "Isquiotibiales en maquina", series: "4x12" },
+            { nombre: "Abductor ext en maquina", series: "2x12" },
+            { nombre: "Abductor int en maquina", series: "2x12" },
+            { nombre: "Gemelo en prensa", series: "4x12" },
+            { nombre: "Gemelo con mancuernas", series: "2x15" }
+        ],
+        "DIA 2": [
+            { nombre: "Prensa 45", series: "3x8" },
+            { nombre: "Extensiones cuádriceps", series: "4x15" },
+            { nombre: "sentadillas bulgaras", series: "3x8" },
+            { nombre: "Isquiotibiales en maquina", series: "4x12" },
+            { nombre: "Abductor ext en maquina", series: "2x15" },
+            { nombre: "Abductor int en maquina", series: "2x15" },
+            { nombre: "Gemelo en prensa", series: "4x15" }
+        ]
+    },
+    "ESPALDA": {
+        "DIA 1": [
+            { nombre: "Remo con barra de pie polea", series: "3x8" },
+            { nombre: "Dominadas", series: "3x10" },
+            { nombre: "Remo en polea baja", series: "4x10" },
+            { nombre: "Press de hombro mancuernas", series: "3x8" },
+            { nombre: "Pres hombros en maquina", series: "3x8" },
+            { nombre: "Elevaciones laterales mancuernas", series: "3x8" },
+            { nombre: "Encogimientos trapecio", series: "3x12" },
+            { nombre: "Remo al mentón barra", series: "3x8" }
+        ],
+        "DIA 2": [
+            { nombre: "Remo en maquina", series: "3x8" },
+            { nombre: "Dominadas", series: "3x10" },
+            { nombre: "Remo en polea baja", series: "4x10" },
+            { nombre: "Pres hombros en maquina", series: "6x8" },
+            { nombre: "Elevaciones laterales mancuernas", series: "3x8" },
+            { nombre: "Encogimientos trapecio", series: "3x12" },
+            { nombre: "Remo al mentón barra", series: "3x8" }
+        ]
+    }
+};
+
+function actualizarPeso(nombreEjer, nuevoPeso) {
+    pesosGlobales[nombreEjer] = parseFloat(nuevoPeso);
+    localStorage.setItem('pesosEntrenamiento', JSON.stringify(pesosGlobales));
+    
+    // Feedback visual
+    const msg = document.getElementById('saveMsg');
+    msg.style.display = 'block';
+    setTimeout(() => msg.style.display = 'none', 2000);
+}
+
+function renderizar() {
+    const musculo = document.getElementById('selectMusculo').value;
+    const dia = document.getElementById('selectDia').value;
+    const contenedor = document.getElementById('listaEjercicios');
+    contenedor.innerHTML = '';
+
+    const ejerciciosHoy = rutinas[musculo][dia];
+
+    ejerciciosHoy.forEach(ej => {
+        const pesoActual = pesosGlobales[ej.nombre] || 0;
+        const div = document.createElement('div');
+        div.className = 'card';
+        div.innerHTML = `
+            <div class="exercise-header">
+                <div class="exercise-name">${ej.nombre}</div>
+                <input type="number" class="weight-input" 
+                    value="${pesoActual}" 
+                    step="0.5"
+                    onchange="actualizarPeso('${ej.nombre}', this.value)">
+            </div>
+            <div class="info">${ej.series} - Peso en KG</div>
+        `;
+        contenedor.appendChild(div);
+    });
+}
+
+// Carga inicial
+renderizar();
+</script>
+
+</body>
+</html>
